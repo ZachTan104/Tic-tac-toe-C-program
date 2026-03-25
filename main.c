@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
-// #include "gamestate.h"   
+#include <functions.c>
 
 // Assume these are declared in gamestate.h
 // typedef struct { int x, y; } Pos;
