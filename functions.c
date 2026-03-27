@@ -8,6 +8,7 @@ struct
 Pair
 {
 	int val1;
+	int val2;
 };
 
 struct 
@@ -46,6 +47,8 @@ GameState
 };
 
 //Set utilities
+
+//Checks if two pairs are equal
 int
 equalPos (struct Pair pair1, struct Pair pair2)
 {
@@ -59,6 +62,7 @@ equalPos (struct Pair pair1, struct Pair pair2)
 	return isEqual;
 }
 
+//checks if set contains int
 int
 containsInt (int val, int set[], int size) //1 means pair1 contains pair2, 0 otherwise
 {
@@ -73,6 +77,7 @@ containsInt (int val, int set[], int size) //1 means pair1 contains pair2, 0 oth
 	
 	return contains;
 }
+
 
 int
 containsPair (struct Pair set[], struct Pair val, int size) // 1 means pair1 contains pair2, 0 otherwise
@@ -134,6 +139,8 @@ removePair (struct Pair set[], struct Pair val, int *size)
         printf("Error: Set does not contain pair\n");
     }
 }
+
+
 
 // initialize variables
 void
@@ -211,4 +218,22 @@ updateFacts(struct GameState * game)
 	{
 		game->over = 1;
 	}
+}
+
+void
+printSet(struct Pair set[], int size)
+{
+    int i;
+
+    printf("{ ");
+
+    for (i = 0; i < size; i++)
+    {
+        printf("(%d,%d)", set[i].val1, set[i].val2);
+
+        if (i < size - 1)
+            printf(", ");
+    }
+
+    printf(" }\n");
 }
