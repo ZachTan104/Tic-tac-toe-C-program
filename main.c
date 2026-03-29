@@ -1,58 +1,57 @@
+// main.c
 #include <stdio.h>
 #include <stdbool.h>
-#include "functions.c"
-
-// Assume these are declared in gamestate.h
-// typedef struct { int x, y; } Pos;
-// typedef struct GameState GameState;
-
-void printBoard(const GameState* gs);           // partner's job 
-const char* playerName(char player);            
+#include "gamestate.h"
 
 int main(void) {
     GameState gs;
-    initGameState(&gs);           // partner's init function
+    initGameState(&gs);
 
-    bool running = true;
+    printf("=== Logical Tic-Tac-Toe (Set Theory Edition) ===\n");
+    printf("Red (R) goes first.\n");
+    printf("Enter moves as: row column  (example: 2 2 for center)\n");
+    printf("Board is 1-indexed (rows/columns 1 to 3)\n\n");
 
-    while (running) {
+    while (true) {
+        // Display current state
         printBoard(&gs);
-        printf("\nSets:\n");
-        printSets(&gs);           // partner's debug print
+        printf("\nCurrent sets:\n");
+        printSets(&gs);
 
-        const char* status = gameOver(&gs);
-        if (status[0] != '\0') {
-            printf("\nGAME OVER: %s\n", status);
-            running = false;
-            continue;
+        // Check if game has ended
+        const char* result = gameOver(&gs);
+        if (result[0] != '\0') {
+            printf("\n========================================\n");
+            printf("=== GAME OVER: %s ===\n", result);
+            printf("========================================\n");
+            break;
         }
 
-        printf("\n%s to move (enter row col): ", playerName(gs.currentPlayer));
+        // Prompt current player
+        char player = currentPlayer(&gs);
+        printf("\n%s's turn → Enter row column: ", (player == 'R' ? "Red" : "Blue"));
 
         int row, col;
         if (scanf("%d %d", &row, &col) != 2) {
-            printf("Invalid input.\n");
-            while (getchar() != '\n'); // clear input buffer
+            printf("Invalid input! Please enter two numbers (row column).\n");
+            while (getchar() != '\n');   // clear input buffer
             continue;
         }
 
-        // Normalize to 0-based if you prefer
-        Pos p = {row - 1, col - 1};   
-
-        if (!isValidPosition(&gs, p)) {
-            printf("Position out of bounds.\n");
-            continue;
-        }
+        // Convert 1-based user input to 0-based Pos
+        Pos p = {row - 1, col - 1};
 
         if (nextPlayerMove(&gs, p)) {
-            // move was accepted — board changed
-            printf("Move accepted.\n");
+            printf("→ Move accepted at (%d, %d)\n", row, col);
         } else {
-            printf("Illegal move.\n");
+            printf("→ Illegal move! Position out of bounds or invalid.\n");
         }
     }
 
-    printf("\nThanks for playing.\n");
+    // Final board display
+    printf("\nFinal board:\n");
+    printBoard(&gs);
+    printf("\nThanks for playing!\n");
+
     return 0;
 }
-
