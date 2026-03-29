@@ -144,14 +144,15 @@ winLogic(const GameState* gs, char player)
 const
 char* gameOver(const GameState* gs)
 {
+	static char message[30];
+	message[0] = '\0'; 
+	
     if (winLogic(gs, 'R'))
-        return "Red wins!";
+        strcpy(message, "Red Wins!");
+    else if (winLogic(gs, 'B'))
+        strcpy(message, "Blue Wins!");
+    else if (gs->fSize == 0)
+        strcpy(message, "It's a Draw!");
 
-    if (winLogic(gs, 'B'))
-        return "Blue wins!";
-
-    if (gs->fSize == 0)
-        return "It's a Draw!'";
-
-    return "";
+    return message;
 }
