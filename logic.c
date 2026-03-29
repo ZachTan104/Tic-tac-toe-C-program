@@ -1,7 +1,8 @@
 // logic.c
 #include <stdio.h>
 #include <stdbool.h>
-#include "gamestate.h"
+#include <string.h>
+#include "functions.c"
 
 // ======================
 // Function prototypes
@@ -76,10 +77,12 @@ void update(GameState* gs, Pos p) {
 // ======================
 
 bool nextPlayerMove(GameState* gs, Pos p) {
-    if (!isValidPosition(gs, p)) {
+    if (!isValidPosition(gs, p))
         return false;
-    }
-
+	
+	if (contains(gs, 'R', p) || contains(gs, 'B', p))
+    	return false;
+    
     //Can add extra rules here
 
     update(gs, p);        // Apply the chosen logical rule
@@ -91,19 +94,64 @@ bool nextPlayerMove(GameState* gs, Pos p) {
 // ======================
 // Game termination (finalized)
 // ======================
+int
+winLogic(const GameState* gs, char player)
+{
+    Pos* set;
+    int size,
+    	i,
+    	win = 0;
 
-const char* gameOver(const GameState* gs) {
-    // Partner A is responsible for maintaining an "over" flag and winner
-    // in updateFacts(). We just read the result here.
+    if (player == 'R') {
+        set = (Pos*) gs->R;
+        size = gs->rSize;
+    } else {
+        set = (Pos*) gs->B;
+        size = gs->bSize;
+    }
 
-    // Placeholder until Partner A finishes updateFacts():
-    // return "";   // game continues
+	//every possible winning combination
+    Pos
+	wins[8][3] = 
+	{
+		//x
+        {{0,0},{0,1},{0,2}},
+	    {{1,0},{1,1},{1,2}},
+	    {{2,0},{2,1},{2,2}},
+	
+		//y
+	    {{0,0},{1,0},{2,0}},
+	    {{0,1},{1,1},{2,1}},
+	    {{0,2},{1,2},{2,2}},
+	
+		//diagonals
+	    {{0,0},{1,1},{2,2}},
+	    {{0,2},{1,1},{2,0}}
+    };
 
-    // Once Partner A implements it, you can do something like:
-    // if (gs->over) {
-    //     if (gs->winner == 'R') return "R wins";
-    //     if (gs->winner == 'B') return "B wins";
-    //     return "Draw";
-    // }
-    return "";   // ← change this when Partner A provides the real check
+    for (i = 0; i < 8; i++) {
+        if (containsSet(set, wins[i][0], size) &&
+            containsSet(set, wins[i][1], size) &&
+            containsSet(set, wins[i][2], size))
+        {
+            win = 1;
+        }
+    }
+
+    return win;
+}
+
+const
+char* gameOver(const GameState* gs)
+{
+    if (winLogic(gs, 'R'))
+        return "Red wins!";
+
+    if (winLogic(gs, 'B'))
+        return "Blue wins!";
+
+    if (gs->fSize == 0)
+        return "It's a Draw!'";
+
+    return "";
 }

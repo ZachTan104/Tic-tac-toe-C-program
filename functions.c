@@ -3,22 +3,20 @@
 #define CSIZE 3		// Z+ && x < 4, 1-3
 #define MSIZE 9	// C*C, 9 combinations
 
-//Varuables and Sets
-struct 
-Pair
+//Variables and Sets
+typedef struct 
 {
-	int val1;
-	int val2;
-};
+	int x;
+	int y;
+} Pos;
 
-struct 
-GameState 
+typedef struct  
 {
 	/* Applicable Sets */
 	
 	int C[CSIZE];
 	//n has no upper bound, represented as a condition (>= 0)
-	struct Pair M[MSIZE];
+	Pos M[MSIZE];
 	
 	/* System Variables */
 	
@@ -33,28 +31,34 @@ GameState
 	int val;
 	
 	// subsets of M
-	struct Pair R[MSIZE];
-	struct Pair B[MSIZE];
-	struct Pair S[MSIZE];
-	struct Pair T[MSIZE];
-	struct Pair F[MSIZE];
+	Pos R[MSIZE];
+	Pos B[MSIZE];
+	Pos S[MSIZE];
+	Pos T[MSIZE];
+	Pos F[MSIZE];
 	
 	int rSize;
 	int bSize;
 	int sSize;
 	int tSize;
 	int fSize;
-};
+
+} GameState;
 
 //Set utilities
 
+
+// =========================================
+// FUNCTIONS USED EXCLUSIVELY IN FUNCTIONS.C
+// =========================================
+
 //Checks if two pairs are equal
 int
-equalPos (struct Pair pair1, struct Pair pair2)
+equalPos (Pos a, Pos b)
 {
 	int isEqual;
 	
-	if(pair1.val1 == pair2.val1 && pair1.val2 == pair2.val2)
+	if(a.x == b.x && a.y == b.y)
 		isEqual = 1;
 	else
 		isEqual = 0;
@@ -64,30 +68,14 @@ equalPos (struct Pair pair1, struct Pair pair2)
 
 //checks if set contains int
 int
-containsInt (int val, int set[], int size) //1 means pair1 contains pair2, 0 otherwise
+containsSet (Pos set[], Pos val, int size) // 1 means pair1 contains pair2, 0 otherwise
 {
 	int i, 
 		contains = 0;
 	
 	for (i = 0; i < size; i++)
 	{
-		if(set[i] == val)
-			contains = 1;
-	}
-	
-	return contains;
-}
-
-
-int
-containsPair (struct Pair set[], struct Pair val, int size) // 1 means pair1 contains pair2, 0 otherwise
-{
-	int i, 
-		contains = 0;
-	
-	for (i = 0; i < size; i++)
-	{
-		if (equalPos(set[i], val) == 1)
+		if (equalPos(set[i], val))
 			contains = 1;
 	} 
 	
@@ -95,11 +83,11 @@ containsPair (struct Pair set[], struct Pair val, int size) // 1 means pair1 con
 }
 
 void
-addPair (struct Pair set[], struct Pair val, int *size)
+add (Pos set[], Pos val, int *size)
 {
-	int contains = containsPair(set, val, *size);
+	int setContains = containsSet(set, val, *size);
 	
-	if(contains == 0 && *size < MSIZE) // errors if the pair is a member of the set
+	if(setContains == 0 && *size < MSIZE) // errors if the pair is a member of the set
 	{
 		(*size)++;
 		set[*size - 1] = val;
@@ -110,8 +98,9 @@ addPair (struct Pair set[], struct Pair val, int *size)
 	}
 }
 
+
 void
-removePair (struct Pair set[], struct Pair val, int *size)
+removeSet (Pos set[], Pos val, int *size)
 {
 	int i, 
 		posI = -1;
@@ -139,14 +128,103 @@ removePair (struct Pair set[], struct Pair val, int *size)
         printf("Error: Set does not contain pair\n");
     }
 }
+// =================================
+// FUNCTIONS TO BE USED IN LOGIC.C
+// =================================
 
-
-
-// initialize variables
-void
-initGameState(struct GameState *game)
+// wrapper function for containsSet
+int
+contains (GameState* gs, char set, Pos p)
 {
-	int i, j, k = 0;
+    if (set == 'R')
+        return containsSet(gs->R, p, gs->rSize);
+    else if (set == 'B')
+        return containsSet(gs->B, p, gs->bSize);
+
+    return 0;
+}
+
+// wrapper function for add
+void
+addToSet (GameState* gs, char set, Pos p)
+{
+    if (set == 'R')
+        add(gs->R, p, &gs->rSize);
+    else if (set == 'B')
+        add(gs->B, p, &gs->bSize);
+}
+
+void
+removeFromSet (GameState* gs, char set, Pos p)
+{
+    if (set == 'R')
+        removeSet(gs->R, p, &gs->rSize);
+    else if (set == 'B')
+        removeSet(gs->B, p, &gs->bSize);
+}
+
+// switches player
+void
+switchPlayer (GameState* gs)
+{
+    gs->go = !gs->go;
+}
+
+// returns the current player
+char 
+currentPlayer (GameState* gs)
+{
+    if (gs->go)
+        return 'R';
+    else
+        return 'B';
+}
+
+// Check if position is valid position inside game grid
+int isValidPosition (GameState* gs, Pos p)
+{
+    return (p.x >= 0 && p.x < 3 && p.y >= 0 && p.y < 3);
+}
+
+// Update based on changes in variable information
+void
+updateFacts (GameState * game)
+{
+	int i;
+	
+	// F = M - (R U B)
+	game->fSize = 0; // Reset fSize
+	
+	for(i = 0; i < MSIZE; i++)
+	{
+		//Does not add to F if value is found in R or B
+		if (containsSet(game->R, game->M[i], game->rSize) == 0 && 
+			containsSet(game->B, game->M[i], game->bSize) == 0)
+		{
+			game->F[game->fSize] = game->M[i];
+			game->fSize++;
+		}
+	}
+	
+	/* over <-> (|F| = 3 V val >= 20 V ~start ^ 
+				(|R| > 0 ^ |B| = 0 V |R| = 0 ^ |B| > 0)) */
+	if (game->fSize == 3 || game->val >= 20 || (!game->start &&
+	   ((game->rSize > 0 && game->bSize == 0) || (game->rSize == 0 && game->bSize > 0)))
+	   || game->fSize == 0) //not in original expression but required for the game logic to run properly
+	{
+		game->over = 1;
+	}
+}
+
+// ===========================
+// INITIALIZATION OF VARIABLES
+// ===========================
+void
+initGameState (GameState *game)
+{
+	int i, 
+		j, 
+		k = 0;
 
 	// Initialize C = {1, 2, 3}
 	for(i = 0; i < CSIZE; i++)
@@ -167,8 +245,8 @@ initGameState(struct GameState *game)
 	{
 		for(j = 0; j < CSIZE; j++)
 		{
-			game->M[k].val1 = game->C[i];
-			game->M[k].val2 = game->C[j];
+			game->M[k].x = i;
+			game->M[k].y = j;
 			k++;
 		}
 	}
@@ -191,49 +269,46 @@ initGameState(struct GameState *game)
 	game->fSize = 0;
 }
 
-void
-updateFacts(struct GameState * game)
+// =================
+// DISPLAY FUNCTIONS
+// =================
+void 
+printBoard (GameState* gs)
 {
-	int i;
+    char board[3][3];
+    int i, 
+		j;
 
-	// F = M - (R U B)
-	
-	game->fSize = 0; // Reset fSize
-	
-	for(i = 0; i < MSIZE; i++)
-	{
-		//Does not add to F if value is found in R or B
-		if (containsPair(game->R, game->M[i], game->rSize) == 0 && 
-			containsPair(game->B, game->M[i], game->bSize) == 0)
-		{
-			game->F[game->fSize] = game->M[i];
-			game->fSize++;
-		}
-	}
-	
-	/* over <-> (|F| = 3 V val >= 20 V ~start ^ 
-				(|R| > 0 ^ |B| = 0 V |R| = 0 ^ |B| > 0)) */
-	if (game->fSize == 3 || game->val >= 20 || (!game->start &&
-	   ((game->rSize > 0 && game->bSize == 0) || (game->rSize == 0 && game->bSize > 0))))
-	{
-		game->over = 1;
-	}
+    for(i = 0; i < 3; i++)
+        for(j = 0; j < 3; j++)
+            board[i][j] = '.';
+
+    for(i = 0; i < gs->rSize; i++)
+        board[gs->R[i].x][gs->R[i].y] = 'R';
+
+    for(i = 0; i < gs->bSize; i++)
+        board[gs->B[i].x][gs->B[i].y] = 'B';
+
+    for(i = 0; i < 3; i++)
+    {
+        for(j = 0; j < 3; j++)
+            printf("%c ", board[i][j]);
+        printf("\n");
+    }
 }
 
 void
-printSet(struct Pair set[], int size)
+printSets (GameState* gs)
 {
     int i;
 
-    printf("{ ");
+    printf("R: ");
+    for(i = 0; i < gs->rSize; i++)
+        printf("(%d,%d) ", gs->R[i].x + 1, gs->R[i].y + 1);
 
-    for (i = 0; i < size; i++)
-    {
-        printf("(%d,%d)", set[i].val1, set[i].val2);
+    printf("\nB: ");
+    for(i = 0; i < gs->bSize; i++)
+        printf("(%d,%d) ", gs->B[i].x + 1, gs->B[i].y + 1);
 
-        if (i < size - 1)
-            printf(", ");
-    }
-
-    printf(" }\n");
+    printf("\n");
 }

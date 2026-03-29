@@ -1,11 +1,12 @@
 // main.c
 #include <stdio.h>
 #include <stdbool.h>
-#include "gamestate.h"
+#include "logic.c"
 
 int main(void) {
     GameState gs;
     initGameState(&gs);
+    updateFacts(&gs);
 
     printf("=== Logical Tic-Tac-Toe (Set Theory Edition) ===\n");
     printf("Red (R) goes first.\n");
