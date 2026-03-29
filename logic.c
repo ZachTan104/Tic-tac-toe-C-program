@@ -1,4 +1,3 @@
-// logic.c
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -73,34 +72,31 @@ void update(GameState* gs, Pos p) {
 }
 
 // ======================
-// Turn-taking
+// Turn-taking (REFACTORED)
 // ======================
 
 bool nextPlayerMove(GameState* gs, Pos p) {
-    if (!isValidPosition(gs, p))
-        return false;
-	
-	if (contains(gs, 'R', p) || contains(gs, 'B', p))
-    	return false;
-    
-    //Can add extra rules here
+    bool success = false;
 
-    update(gs, p);        // Apply the chosen logical rule
-    switchPlayer(gs);     // Alternate Red <-> Blue
+    // Check validity and occupancy before proceeding
+    if (isValidPosition(gs, p)) {
+        if (!contains(gs, 'R', p) && !contains(gs, 'B', p)) {
+            update(gs, p);        // Apply the chosen logical rule
+            switchPlayer(gs);     // Alternate Red <-> Blue
+            success = true;
+        }
+    }
 
-    return true;
+    return success;
 }
 
 // ======================
-// Game termination (finalized)
+// Game termination (REFACTORED)
 // ======================
-int
-winLogic(const GameState* gs, char player)
-{
+
+int winLogic(const GameState* gs, char player) {
     Pos* set;
-    int size,
-    	i,
-    	win = 0;
+    int size, i, win = 0;
 
     if (player == 'R') {
         set = (Pos*) gs->R;
@@ -110,29 +106,27 @@ winLogic(const GameState* gs, char player)
         size = gs->bSize;
     }
 
-	//every possible winning combination
-    Pos
-	wins[8][3] = 
-	{
-		//x
+    // every possible winning combination
+    Pos wins[8][3] = {
+        // x
         {{0,0},{0,1},{0,2}},
-	    {{1,0},{1,1},{1,2}},
-	    {{2,0},{2,1},{2,2}},
-	
-		//y
-	    {{0,0},{1,0},{2,0}},
-	    {{0,1},{1,1},{2,1}},
-	    {{0,2},{1,2},{2,2}},
-	
-		//diagonals
-	    {{0,0},{1,1},{2,2}},
-	    {{0,2},{1,1},{2,0}}
+        {{1,0},{1,1},{1,2}},
+        {{2,0},{2,1},{2,2}},
+    
+        // y
+        {{0,0},{1,0},{2,0}},
+        {{0,1},{1,1},{2,1}},
+        {{0,2},{1,2},{2,2}},
+    
+        // diagonals
+        {{0,0},{1,1},{2,2}},
+        {{0,2},{1,1},{2,0}}
     };
 
     for (i = 0; i < 8; i++) {
         if (containsSet(set, wins[i][0], size) &&
             containsSet(set, wins[i][1], size) &&
-            containsSet(set, wins[i][2], size))
+            containsSet(set, wins[i][2], size)) 
         {
             win = 1;
         }
@@ -141,18 +135,17 @@ winLogic(const GameState* gs, char player)
     return win;
 }
 
-const
-char* gameOver(const GameState* gs)
-{
-	static char message[30];
-	message[0] = '\0'; 
-	
-    if (winLogic(gs, 'R'))
+const char* gameOver(const GameState* gs) {
+    static char message[30];
+    message[0] = '\0'; 
+    
+    if (winLogic(gs, 'R')) {
         strcpy(message, "Red Wins!");
-    else if (winLogic(gs, 'B'))
+    } else if (winLogic(gs, 'B')) {
         strcpy(message, "Blue Wins!");
-    else if (gs->fSize == 0)
+    } else if (gs->fSize == 0) {
         strcpy(message, "It's a Draw!");
+    }
 
     return message;
 }
